@@ -2,11 +2,8 @@
  *	Touch
  *	---------
  *	name: Touch
- *	license: GNU LESSER GENERAL PUBLIC LICENSE 
- * 		http://www.gnu.org/licenses/lgpl-3.0.txt
  *
  *	Author Mient-jan Stelling <mientjan.stelling@gmail.com>
- *	Copyright (c) 2006-2010 MediaMonks B.V.
  *	
  *	Got Object.prototype.hasOwnProperty from 
  *	John Resig on http://stackoverflow.com/questions/135448/how-do-i-check-to-see-if-an-object-has-an-attribute-in-javascript
@@ -236,3 +233,208 @@ Touch.pos_move_x = 0;
 Touch.pos_move_y = 0;
 Touch.pos_move_v = null;
 Touch.move_v = null;
+
+/**
+ *﻿  Vector2
+ *﻿  ---------
+ *
+ *﻿  author Mient-jan Stelling <mientjan.stelling@gmail.com>
+ **/
+
+function Vector2(x,y)
+{
+﻿  this.x = x;
+﻿  this.y = y;
+}
+
+Vector2.prototype.toString = function()
+{
+﻿  return '(' + this.x + ', ' + this.y + ')';
+}
+﻿  
+// calls a trace of toString
+Vector2.prototype.dump = function()
+{
+﻿  console.log(this.toString());
+}
+﻿  
+﻿  //----- these functions return Vector2s -----
+﻿  
+Vector2.prototype.clone = function()
+{
+﻿  var v = new Vector2(this.x, this.y);
+﻿  return v;
+}
+﻿  
+Vector2.prototype.plus = function(v2)
+{
+﻿  var v = new Vector2( this.x + v2.x, this.y + v2.y)
+﻿  return v;
+}
+﻿  
+﻿  //return this-v2
+Vector2.prototype.minus = function(v2)
+{
+﻿  var v = new Vector2( this.x - v2.x, this.y - v2.y)
+﻿  return v;
+}
+
+/**
+ * @author Mient-jan Stelling
+ * @arguments Vector2 v
+ * @return float
+ */
+Vector2.prototype.degre = function(v2){
+﻿  var v = this.minus(v2);
+﻿  var a = Math.atan2(v.y, v.x);
+﻿  return (a*(180/Math.PI))+180;
+};
+
+//return the righthand normal of this (using flash's coordinate system)
+Vector2.prototype.normR = function()
+{
+﻿  var v = new Vector2( this.y * -1, this.x);
+﻿  return v;﻿  
+}
+﻿  
+//return the leftHand normal of this (using flash's coordinate system)
+Vector2.prototype.normL = function()
+{
+﻿  var v = new Vector2( this.y,  -1 * this.x);
+﻿  return v;﻿  
+}
+﻿  
+//return the (unit) direction vector of this
+Vector2.prototype.dir = function()
+{
+﻿  var v = this.clone();
+﻿  v.normalize();
+﻿  return v;
+}
+﻿  
+﻿  //return this projected _onto_ v2
+Vector2.prototype.proj = function(v2){
+﻿  var den = v2.dot(v2);﻿  
+﻿  if(den == 0)
+﻿  {
+﻿  ﻿  //zero-length v2
+﻿  ﻿  console.log("WARNING! Vector2.proj() was given a zero-length projection vector!");
+﻿  ﻿  return this.clone();//not sure how to gracefully recover but, hopefully this will be okay
+﻿  }
+﻿  else
+﻿  {
+﻿  ﻿  var v = v2.clone();
+﻿  ﻿  v.mult(this.dot(v2)/den);
+﻿  ﻿  return v;
+﻿  }
+}
+
+//----- these functions return scalars -----
+
+//return the magnitude (absval) of this projected onto v2
+Vector2.prototype.projLen = function(v2){
+﻿  var den = v2.dot(v2);
+﻿  if(den == 0)
+﻿  {
+﻿  ﻿  //zero-length v2
+﻿  ﻿  console.log("WARNING! Vector2.projLen() was given a zero-length projection vector!");
+﻿  ﻿  return 0;
+﻿  }
+﻿  else
+﻿  {
+﻿  ﻿  return Math.abs(this.dot(v2)/v2.len());
+﻿  }
+}
+
+//return the dotprod of this and v2
+Vector2.prototype.dot = function(v2){
+﻿  return ((this.x * v2.x) + (this.y * v2.y));
+}
+
+//return the crossprod of this and v2
+//note that this is equivalent to the dotprod of this and the lefthand normal of v2
+Vector2.prototype.cross = function(v2){
+﻿  return ((this.x * v2.y) - (this.y * v2.x));
+}
+
+///return the length of this
+Vector2.prototype.len = function()
+{
+﻿  return (Math.sqrt((this.x*this.x) + (this.y*this.y)));
+}
+
+///return the angle of the vector
+Vector2.prototype.angle = function(v2){
+﻿  return (Math.acos((this.dot(v2))/(this.len()*v2.len()))/Math.PI * 180);
+}
+
+//----- these functions return nothing (they operate on this) -----
+
+//change this to a duplicate of v2
+Vector2.prototype.copy = function(v2)
+{
+﻿  this.x = v2.x;
+﻿  this.y = v2.y;
+}
+
+//multiply this by a scalar s
+Vector2.prototype.mult = function(s)
+{
+﻿  this.x *= s;
+﻿  this.y *= s;
+}
+
+//convert this vector to a unit/direction vector
+Vector2.prototype.normalize = function()
+{
+﻿  var L = this.len();
+﻿  if(L != 0)
+﻿  {
+﻿  ﻿  this.x /= L;
+﻿  ﻿  this.y /= L;﻿  
+﻿  }
+﻿  else
+﻿  {
+﻿  ﻿  console.log("WARNING! Vector2.normalize() was called on a zero-length vector!");
+﻿  }
+}
+
+//add v2 to this
+Vector2.prototype.pluseq = function(v2) {
+﻿  this.x += v2.x;
+﻿  this.y += v2.y;
+}
+
+//subtract v2 from this
+Vector2.prototype.minuseq = function(v2) {
+﻿  this.x -= v2.x;
+﻿  this.y -= v2.y;
+}
+
+Vector2.prototype.topLeft = function(v2){
+﻿  var x ﻿  ﻿  = Math.min(this.x, v2.x);
+﻿  var y ﻿  ﻿  = Math.min(this.y, v2.y);
+﻿  
+﻿  return new Vector2(x, y);
+}
+
+Vector2.prototype.topRight = function(v2){
+﻿  var x ﻿  ﻿  = Math.max(this.x, v2.x);
+﻿  var y ﻿  ﻿  = Math.min(this.y, v2.y);
+﻿  
+﻿  return new Vector2(x, y);
+}
+
+Vector2.prototype.bottomRight = function(v2){
+﻿  var x ﻿  ﻿  = Math.max(this.x, v2.x);
+﻿  var y ﻿  ﻿  = Math.max(this.y, v2.y);
+﻿  
+﻿  return new Vector2(x, y);
+}
+
+Vector2.prototype.bottomLeft = function(v2){
+﻿  var x ﻿  ﻿  = Math.min(this.x, v2.x);
+﻿  var y ﻿  ﻿  = Math.max(this.y, v2.y);
+﻿  
+﻿  return new Vector2(x, y);
+}
