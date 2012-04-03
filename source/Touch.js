@@ -90,16 +90,16 @@ Touch.prototype.handleEvent = function(e){
 		// Touch.pos_move_y = e.targetTouches[0].clientY;
 		Touch.move_v = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY );
 		
+		if( this.options.preventDefault ){
+			e.preventDefault();
+		}
+		
 		Touch.move_t = e.timeStamp;
 		Touch.moved = true
 		this.onTouchMove(e);			
 	} else if (e.type == 'touchstart'){
 		if( !this.touchable ){
 			return;
-		}
-
-		if( this.options.preventDefault ){
-			e.preventDefault();
 		}
 
 		Touch.moved = false;
