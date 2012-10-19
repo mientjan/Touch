@@ -1,96 +1,118 @@
 /// <reference path="Vector2.ts" />
+/// <reference path="TouchEvent.d.ts" />
 
 // fix for wrong signature in EventTarget interface in TypeScript. 
 interface EventTarget {
-	removeEventListener(type: string, listener: { handleEvent: Function; }, useCapture?: bool): void;
-	removeEventListener(type: string, listener: Function, useCapture?: bool): void;
+	removeEventListener(type: string, listener: { handleEvent: (e: ITouchEvent) => any; }, useCapture?: bool): void;
+	removeEventListener(type: string, listener: (e: ITouchEvent) => any, useCapture?: bool): void;
 
-	addEventListener(type: string, listener: { handleEvent: Function; }, useCapture?: bool): void;
-	addEventListener(type: string, listener: Function, useCapture?: bool): void;
-
-	dispatchEvent(evt: Event): bool;
+	addEventListener(type: string, listener: { handleEvent: (e: ITouchEvent) => any; }, useCapture?: bool): void;
+	addEventListener(type: string, listener: (e: ITouchEvent) => any, useCapture?: bool): void;
 }
 
-interface TouchEvents {
-	tap: (e: MouseEvent) => void;
-	touchstart: (e: MouseEvent) => void;
-	touchmove: (e: MouseEvent) => void;
-	touchend: (e: MouseEvent) => void;
-	dblTap: (e: MouseEvent) => void;
-	swipeUp: (e: MouseEvent) => void;
-	swipeDown: (e: MouseEvent) => void;
-	swipeLeft: (e: MouseEvent) => void;
-	swipeRight: (e: MouseEvent) => void;
-	swiping: (e: MouseEvent, delta: number) => void;
-	swipingUp: (e: MouseEvent, delta: number) => void;
-	swipingDown: (e: MouseEvent, delta: number) => void;
-	swipingLeft: (e: MouseEvent, delta: number) => void;
-	swipingRight: (e: MouseEvent, delta: number) => void;
+interface TouchEventOptions {
+	tap: (e: ITouchEvent) => void;
+	touchstart: (e: ITouchEvent) => void;
+	touchmove: (e: ITouchEvent) => void;
+	touchend: (e: ITouchEvent) => void;
+	dblTap: (e: ITouchEvent) => void;
+	swipeUp: (e: ITouchEvent) => void;
+	swipeDown: (e: ITouchEvent) => void;
+	swipeLeft: (e: ITouchEvent) => void;
+	swipeRight: (e: ITouchEvent) => void;
+	swiping: (e: ITouchEvent, delta: number) => void;
+	swipingUp: (e: ITouchEvent, delta: number) => void;
+	swipingDown: (e: ITouchEvent, delta: number) => void;
+	swipingLeft: (e: ITouchEvent, delta: number) => void;
+	swipingRight: (e: ITouchEvent, delta: number) => void;
 }
 
-interface TouchVector {
+interface TouchVectorBlock {
 	start: Vector2;
 	move: Vector2;
 	end: Vector2;
 }
 
 
-interface TouchTime {
+interface TouchTimeBlock {
 	start: number;
 	move: number;
 	end: number;
 }
 
-interface TouchEvent {
-	start: MouseEvent;
-	move: MouseEvent;
-	end: MouseEvent;
+interface TouchEventBlock {
+	start: ITouchEvent;
+	move: ITouchEvent;
+	end: ITouchEvent;
 }
 
 class Touch {
 
-	static vector: TouchVector;
-	static time: TouchTime;
-	static event: TouchEvent;
+	static vector: TouchVectorBlock;
+	static time: TouchTimeBlock;
+	static event: TouchEventBlock;
+	static _moved: bool = false;
 
 	private _touchable: bool = false;
-	private _moved: bool = false;
+
 	private _clickTime: number = 0;
 	private _startEvent: MouseEvent = null;
+	private _delay: number = 0;
 
-	constructor (public el: Element, public events: TouchEvents,
+	constructor (public el: Element, public events: TouchEventOptions,
 		public options?: { preventDefault?: bool; }) {
 	}
 
-	handleEvent(e: MouseEvent) {
+	handleEvent(e: ITouchEvent) {
 		if (e.type == 'touchmove') {
+			Touch.vector.move = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+
 			if (this.options.preventDefault) {
 				e.preventDefault();
 			}
 
-			this.onTouchMove(e);
-		} else if (e.type == 'touchstart') {
+			Touch.time.move = e.timeStamp;
+			Touch._moved = true
 
+			this.onTouchMove(e);
+
+		} else if (e.type == 'touchstart') {
+			if (!this._touchable) {
+				return;
+			}
+
+			Touch._moved = false;
+			Touch.time.start = e.timeStamp;
+			Touch.event.start = e;
+			Touch.vector.start = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
+
+			// Touch.pos_start_x = e.targetTouches[0].clientX;
+			// Touch.pos_start_y = e.targetTouches[0].clientY;
 			this.onTouchStart(e);
 		} else if (e.type == 'touchend') {
+			// Touch.pos_end_x = Touch.pos_move_x;
+			// Touch.pos_end_y = Touch.pos_move_y;
 			this.onTouchEnd(e);
 		}
 
+		this.deligateEvent(e.type, e);
+
 	}
 
-	deligateEvent(name: string, event: MouseEvent, delta?: number) {
+	deligateEvent(name: string, event: ITouchEvent, delta?: number) {
 		if (this.events.hasOwnProperty(name)) {
 			this.events[name].call(this, name, event, delta);
 		}
 	}
 
-	onTouchStart(e: MouseEvent) {
+	onTouchStart(e: ITouchEvent) {
+		Touch.event.start = e;
 		this.el.addEventListener('touchmove', this, false);
 		this.el.addEventListener('touchend', this, false);
 	}
 
-	onTouchMove(e: MouseEvent) {
-
+	onTouchMove(e: ITouchEvent) {
+		Touch.event.move = e;
 
 		// detect sweep
 		if (Math.abs(Touch.vector.start.x) > 50 || Math.abs(Touch.vector.start.y) > 50) {
@@ -113,23 +135,22 @@ class Touch {
 		this.deligateEvent('move', e);
 	}
 
-	onTouchEnd(e: MouseEvent) {
+	onTouchEnd(e: ITouchEvent) {
 
 		// fire click event
-		if (!this._moved) {
+		if (!Touch._moved) {
 			if ((e.timeStamp - this._clickTime) < 200) {
-				this.deligateEvent('dblTap', this._startEvent);
+				this.deligateEvent('dblTap', Touch.event.start);
 			} else {
 				e.preventDefault();
 				this._clickTime = e.timeStamp;
-				this.deligateEvent('tap', this._startEvent );
+				this.deligateEvent('tap', Touch.event.start);
 			}
-		} 
+		}
 
 		// detect sweep
 		if ((Math.abs(Touch.vector.start.x) > 50 || Math.abs(Touch.vector.start.y) > 50)
-			&& (Touch.time.move - Touch.time.start) < 400)
-		{
+			&& (Touch.time.move - Touch.time.start) < 400) {
 			var d = Touch.vector.start.degre(Touch.vector.move);
 
 			if (d >= 70 && d <= 110) { // swipeDown
@@ -142,7 +163,7 @@ class Touch {
 				this.deligateEvent('swipeUp', Touch.event.start, d);
 			}
 		}
-		
+
 
 		this.resetEvents();
 	};
@@ -154,6 +175,12 @@ class Touch {
 
 	preventTouch(t) {
 		this._touchable = false;
+
+		this._delay = setInterval(() => {
+			this._touchable = true;
+			clearInterval(this._delay);
+		}, t);
+
 		// (function() { this.touchable = true; }.bind(this)).delay(t);
 	}
 
