@@ -27,30 +27,28 @@ interface TouchEventOptions {
 	swipingRight: (e: ITouchEvent, delta: number) => void;
 }
 
-interface TouchVectorBlock {
-	start: Vector2;
-	move: Vector2;
-	end: Vector2;
-}
 
-
-interface TouchTimeBlock {
-	start: number;
-	move: number;
-	end: number;
-}
-
-interface TouchEventBlock {
-	start: ITouchEvent;
-	move: ITouchEvent;
-	end: ITouchEvent;
-}
 
 class Touch {
 
-	static vector: TouchVectorBlock;
-	static time: TouchTimeBlock;
-	static event: TouchEventBlock;
+	static vector: {
+		start: Vector2;
+		move: Vector2;
+		end: Vector2;
+	};
+
+	static time: {
+		start: number;
+		move: number;
+		end: number;
+	};
+
+	static event: {
+		start: ITouchEvent;
+		move: ITouchEvent;
+		end: ITouchEvent;
+	};
+
 	static _moved: bool = false;
 
 	private _touchable: bool = false;
@@ -60,14 +58,14 @@ class Touch {
 	private _delay: number = 0;
 
 	constructor (public el: Element, public events: TouchEventOptions,
-		public options?: { preventDefault?: bool; }) {
-	}
+	public options?: { preventDefault?: bool; }) {}
 
-	handleEvent(e: ITouchEvent) {
+	handleEvent(e: ITouchEvent) 
+	{
 		if (e.type == 'touchmove') {
 			Touch.vector.move = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 
-			if (this.options.preventDefault) {
+			if (this.options && this.options.preventDefault) {
 				e.preventDefault();
 			}
 
@@ -86,12 +84,9 @@ class Touch {
 			Touch.event.start = e;
 			Touch.vector.start = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 
-			// Touch.pos_start_x = e.targetTouches[0].clientX;
-			// Touch.pos_start_y = e.targetTouches[0].clientY;
 			this.onTouchStart(e);
 		} else if (e.type == 'touchend') {
-			// Touch.pos_end_x = Touch.pos_move_x;
-			// Touch.pos_end_y = Touch.pos_move_y;
+			
 			this.onTouchEnd(e);
 		}
 
@@ -150,7 +145,7 @@ class Touch {
 
 		// detect sweep
 		if ((Math.abs(Touch.vector.start.x) > 50 || Math.abs(Touch.vector.start.y) > 50)
-			&& (Touch.time.move - Touch.time.start) < 400) {
+		&& (Touch.time.move - Touch.time.start) < 400) {
 			var d = Touch.vector.start.degre(Touch.vector.move);
 
 			if (d >= 70 && d <= 110) { // swipeDown
