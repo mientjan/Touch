@@ -1,32 +1,43 @@
+var __extends = this.__extends || function (d, b) {
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+}
 var Touch = (function () {
     function Touch(el, events, options) {
+        if (typeof events === "undefined") { events = {
+        }; }
+        if (typeof options === "undefined") { options = {
+        }; }
         this.el = el;
         this.events = events;
         this.options = options;
-        this._touchable = false;
+        this.isTouchable = false;
         this._clickTime = 0;
         this._startEvent = null;
         this._delay = 0;
+        this.events = {
+        };
     }
     Touch.vector = null;
     Touch.time = null;
     Touch.event = null;
-    Touch._moved = false;
+    Touch.hasMoved = false;
     Touch.prototype.handleEvent = function (e) {
         if(e.type == 'touchmove') {
             Touch.vector.move = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
-            if(this.options.preventDefault) {
+            if(this.options && this.options.preventDefault) {
                 e.preventDefault();
             }
             Touch.time.move = e.timeStamp;
-            Touch._moved = true;
+            Touch.hasMoved = true;
             this.onTouchMove(e);
         } else {
             if(e.type == 'touchstart') {
-                if(!this._touchable) {
+                if(!this.isTouchable) {
                     return;
                 }
-                Touch._moved = false;
+                Touch.hasMoved = false;
                 Touch.time.start = e.timeStamp;
                 Touch.event.start = e;
                 Touch.vector.start = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
@@ -42,6 +53,21 @@ var Touch = (function () {
     Touch.prototype.deligateEvent = function (name, event, delta) {
         if(this.events.hasOwnProperty(name)) {
             this.events[name].call(this, name, event, delta);
+        }
+    };
+    Touch.prototype.setEvent = function (name, fn) {
+        this.events[name] = fn;
+    };
+    Touch.prototype.setEvents = function (events) {
+        for(var name in events) {
+            if(events.hasOwnProperty(name)) {
+                this.eventspname = events[name];
+            }
+        }
+    };
+    Touch.prototype.removeEvent = function (name) {
+        if(this.events.hasOwnProperty(name)) {
+            this.events[name] = null;
         }
     };
     Touch.prototype.onTouchStart = function (e) {
@@ -73,7 +99,7 @@ var Touch = (function () {
         this.deligateEvent('move', e);
     };
     Touch.prototype.onTouchEnd = function (e) {
-        if(!Touch._moved) {
+        if(!Touch.hasMoved) {
             if((e.timeStamp - this._clickTime) < 200) {
                 this.deligateEvent('dblTap', Touch.event.start);
             } else {
@@ -108,20 +134,40 @@ var Touch = (function () {
     };
     Touch.prototype.preventTouch = function (t) {
         var _this = this;
-        this._touchable = false;
+        this.isTouchable = false;
         this._delay = setInterval(function () {
-            _this._touchable = true;
+            _this.isTouchable = true;
             clearInterval(_this._delay);
         }, t);
     };
     Touch.prototype.stopTouch = function (t) {
-        this._touchable = false;
+        this.isTouchable = false;
     };
     Touch.prototype.startTouch = function (t) {
-        this._touchable = true;
+        this.isTouchable = true;
     };
     Touch.prototype.bindEvent = function () {
         this.el.addEventListener('touchstart', this, false);
     };
     return Touch;
 })();
+var TouchScroll = (function (_super) {
+    __extends(TouchScroll, _super);
+    function TouchScroll(wrapper, holder) {
+        _super.call(this, wrapper);
+        this.wrapper = wrapper;
+        this.holder = holder;
+        this.setEvents({
+            swipingUp: function (e, delta) {
+                console.log(delta);
+            },
+            swipingDown: function (e, delta) {
+            },
+            swipingLeft: function (e, delta) {
+            },
+            swipingRight: function (e, delta) {
+            }
+        });
+    }
+    return TouchScroll;
+})(Touch);

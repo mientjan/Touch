@@ -11,20 +11,20 @@ interface EventTarget {
 }
 
 interface TouchEventOptions {
-	tap: (e: ITouchEvent) => void;
-	touchstart: (e: ITouchEvent) => void;
-	touchmove: (e: ITouchEvent) => void;
-	touchend: (e: ITouchEvent) => void;
-	dblTap: (e: ITouchEvent) => void;
-	swipeUp: (e: ITouchEvent) => void;
-	swipeDown: (e: ITouchEvent) => void;
-	swipeLeft: (e: ITouchEvent) => void;
-	swipeRight: (e: ITouchEvent) => void;
-	swiping: (e: ITouchEvent, delta: number) => void;
-	swipingUp: (e: ITouchEvent, delta: number) => void;
-	swipingDown: (e: ITouchEvent, delta: number) => void;
-	swipingLeft: (e: ITouchEvent, delta: number) => void;
-	swipingRight: (e: ITouchEvent, delta: number) => void;
+	tap?: (e: ITouchEvent) => void;
+	touchstart?: (e: ITouchEvent) => void;
+	touchmove?: (e: ITouchEvent) => void;
+	touchend?: (e: ITouchEvent) => void;
+	dblTap?: (e: ITouchEvent) => void;
+	swipeUp?: (e: ITouchEvent) => void;
+	swipeDown?: (e: ITouchEvent) => void;
+	swipeLeft?: (e: ITouchEvent) => void;
+	swipeRight?: (e: ITouchEvent) => void;
+	swiping?: (e: ITouchEvent, delta: number) => void;
+	swipingUp?: (e: ITouchEvent, delta: number) => void;
+	swipingDown?: (e: ITouchEvent, delta: number) => void;
+	swipingLeft?: (e: ITouchEvent, delta: number) => void;
+	swipingRight?: (e: ITouchEvent, delta: number) => void;
 }
 
 
@@ -49,19 +49,20 @@ class Touch {
 		end: ITouchEvent;
 	};
 
-	static _moved: bool = false;
+	static hasMoved: bool = false;
 
-	private _touchable: bool = false;
+	private isTouchable: bool = false;
 
 	private _clickTime: number = 0;
 	private _startEvent: MouseEvent = null;
 	private _delay: number = 0;
+	private events: TouchEventOptions = {};
 
-	constructor (public el: Element, public events: TouchEventOptions,
-	public options?: { preventDefault?: bool; }) {}
+	constructor (public el: Element, public events?: TouchEventOptions = {}, public options?: { preventDefault?: bool; } = {}) {
 
-	handleEvent(e: ITouchEvent) 
-	{
+	}
+
+	handleEvent(e: ITouchEvent) {
 		if (e.type == 'touchmove') {
 			Touch.vector.move = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 
@@ -70,23 +71,22 @@ class Touch {
 			}
 
 			Touch.time.move = e.timeStamp;
-			Touch._moved = true
+			Touch.hasMoved = true
 
 			this.onTouchMove(e);
 
 		} else if (e.type == 'touchstart') {
-			if (!this._touchable) {
+			if (!this.isTouchable) {
 				return;
 			}
 
-			Touch._moved = false;
+			Touch.hasMoved = false;
 			Touch.time.start = e.timeStamp;
 			Touch.event.start = e;
 			Touch.vector.start = new Vector2(e.targetTouches[0].clientX, e.targetTouches[0].clientY);
 
 			this.onTouchStart(e);
 		} else if (e.type == 'touchend') {
-			
 			this.onTouchEnd(e);
 		}
 
@@ -97,6 +97,24 @@ class Touch {
 	deligateEvent(name: string, event: ITouchEvent, delta?: number) {
 		if (this.events.hasOwnProperty(name)) {
 			this.events[name].call(this, name, event, delta);
+		}
+	}
+	
+	setEvent(name: string, fn:Function) {
+		this.events[name] = fn;
+	}
+
+	setEvents(events:Object) {
+		for (var name in events) {
+			if (events.hasOwnProperty(name)) {
+				this.events[name] = events[name];
+			}
+		}
+	}
+	
+	removeEvent(name: string) {
+		if (this.events.hasOwnProperty(name)) {
+			this.events[name] = null;
 		}
 	}
 
@@ -133,7 +151,7 @@ class Touch {
 	onTouchEnd(e: ITouchEvent) {
 
 		// fire click event
-		if (!Touch._moved) {
+		if (!Touch.hasMoved) {
 			if ((e.timeStamp - this._clickTime) < 200) {
 				this.deligateEvent('dblTap', Touch.event.start);
 			} else {
@@ -169,10 +187,10 @@ class Touch {
 	}
 
 	preventTouch(t) {
-		this._touchable = false;
+		this.isTouchable = false;
 
 		this._delay = setInterval(() => {
-			this._touchable = true;
+			this.isTouchable = true;
 			clearInterval(this._delay);
 		}, t);
 
@@ -180,14 +198,36 @@ class Touch {
 	}
 
 	stopTouch(t) {
-		this._touchable = false;
+		this.isTouchable = false;
 	}
 
 	startTouch(t) {
-		this._touchable = true;
+		this.isTouchable = true;
 	}
 
 	bindEvent() {
 		this.el.addEventListener('touchstart', this, false);
+	}
+}
+
+class TouchScroll extends Touch {
+	constructor (public wrapper: HTMLElement, public holder: HTMLElement) {
+		super(wrapper);
+		
+		this.setEvents({
+			//swiping?: (e: ITouchEvent, delta: number) => void;
+			swipingUp: (e, delta) => { 
+				console.log('swipingUp', delta);
+			},
+			swipingDown: (e, delta) => {
+				console.log('swipingDown', delta);
+			},
+			swipingLeft: (e, delta) => {
+				console.log('swipingLeft', delta);
+			},
+			swipingRight: (e, delta) => {
+				console.log('swipingRight', delta);
+			}
+		});
 	}
 }

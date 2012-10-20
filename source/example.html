@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title></title>
+	<script src="Vector2.js"></script>
+	<script src="Touch.js"></script>
+	<script>
+		window.onload = function (e) {
+			var t = new TouchScroll(
+                document.getElementsByClassName('wrapper'),
+                document.getElementsByClassName('holder')
+           );
+		}
+	</script>
+	<style>
+		.wrapper {
+			height: 100px;
+			width: 50px;
+			position: relative;
+			overflow: hidden;
+		}
+
+		.holder {
+			height: 400px;
+			width: 50px;
+			position: absolute;
+		}
+	</style>
+</head>
+<body>
+	<div class="wrapper">
+		<div class="holder"></div>
+	</div>
+</body>
+</html>
